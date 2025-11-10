@@ -147,7 +147,8 @@ This will spin up both the **PostgreSQL** database and the **API server**.
 ## 🧪 Run Tests
 
 ```bash
-go test ./controllers -v
+cd ./controllers
+go test ./...
 ```
 
 ---
