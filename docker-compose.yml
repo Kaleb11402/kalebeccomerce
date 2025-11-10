@@ -1,0 +1,55 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: myapp_db
+    restart: always
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypass
+      POSTGRES_DB: mydb
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - myapp_network
+
+  migrate:
+    image: migrate/migrate
+    container_name: myapp_migrate
+    depends_on:
+      - db
+    volumes:
+      - ./db/migrations:/migrations
+    entrypoint: [
+      "sh", "-c",
+      "sleep 5 && migrate -path=/migrations -database postgres://myuser:mypass@db:5432/mydb?sslmode=disable up"
+    ]
+    networks:
+      - myapp_network
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: myapp_pgadmin
+    restart: always
+    depends_on:
+      - db
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@myapp.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - myapp_network
+
+volumes:
+  db_data:
+  pgadmin_data:
+
+networks:
+  myapp_network:
+    driver: bridge
