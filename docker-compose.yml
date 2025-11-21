@@ -1,6 +1,7 @@
-version: "3.9"
-
 services:
+  # -----------------------------------------------------------------
+  # 1. Database Service (PostgreSQL)
+  # -----------------------------------------------------------------
   db:
     image: postgres:15-alpine
     container_name: myapp_db
@@ -16,13 +17,16 @@ services:
     networks:
       - myapp_network
 
+  # -----------------------------------------------------------------
+  # 2. Migration Service (One-off task)
+  # -----------------------------------------------------------------
   migrate:
     image: migrate/migrate
     container_name: myapp_migrate
     depends_on:
       - db
     volumes:
-      - ./db/migrations:/migrations
+      - ./db/migrations:/migrations  # Ensure this directory exists relative to this file
     entrypoint: [
       "sh", "-c",
       "sleep 5 && migrate -path=/migrations -database postgres://myuser:mypass@db:5432/mydb?sslmode=disable up"
@@ -30,6 +34,34 @@ services:
     networks:
       - myapp_network
 
+  # -----------------------------------------------------------------
+  # 3. Web Application Service (Go App)
+  # -----------------------------------------------------------------
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: myapp_web
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy # Wait for the DB to be truly ready (optional but safer)
+      migrate:
+        condition: service_completed_successfully # Wait for migration to finish
+    environment:
+      # These must match the environment variables expected by your Go app
+      DATABASE_URL: postgres://myuser:mypass@db:5432/mydb?sslmode=disable
+      PORT: 8080
+    ports:
+      - "8080:8080" # Maps host port 8080 to the app's listening port
+    volumes:
+      - .:/app # Mounts your local project for development/hot-reloading (if configured)
+    networks:
+      - myapp_network
+
+  # -----------------------------------------------------------------
+  # 4. Management Tool (pgAdmin)
+  # -----------------------------------------------------------------
   pgadmin:
     image: dpage/pgadmin4
     container_name: myapp_pgadmin
@@ -40,12 +72,15 @@ services:
       PGADMIN_DEFAULT_EMAIL: admin@myapp.com
       PGADMIN_DEFAULT_PASSWORD: admin123
     ports:
-      - "5050:80"
+      - "5050:80" # Access pgAdmin on http://localhost:5050
     volumes:
       - pgadmin_data:/var/lib/pgadmin
     networks:
       - myapp_network
 
+# -----------------------------------------------------------------
+# Volumes and Networks
+# -----------------------------------------------------------------
 volumes:
   db_data:
   pgadmin_data:

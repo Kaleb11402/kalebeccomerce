@@ -51,7 +51,7 @@ type Product struct {
 	ImageURL    string     `json:"image_url"`
 	Price       float64    `json:"price"`
 	Stock       int        `json:"stock"`
-	Category    string     `json:"category"`
+	CategoryID  *uuid.UUID `json:"category_id"`
 	UserID      *uuid.UUID `json:"user_id"`
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
@@ -72,4 +72,9 @@ type OrderItem struct {
 	ProductID uuid.UUID `json:"product_id"`
 	Quantity  int       `json:"quantity"`
 	UnitPrice float64   `json:"unit_price"`
+}
+
+type Category struct {
+	ID   string `gorm:"primaryKey" json:"id"`
+	Name string `gorm:"type:varchar(100);not null;unique" json:"name"`
 }

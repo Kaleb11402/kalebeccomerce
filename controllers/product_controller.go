@@ -25,7 +25,7 @@ func CreateProduct(db *gorm.DB) gin.HandlerFunc {
 			Description string `form:"description" binding:"required"`
 			Price       string `form:"price" binding:"required"` // Read as string, convert later
 			Stock       string `form:"stock" binding:"required"` // Read as string, convert later
-			Category    string `form:"category"`
+			CategoryID  string `form:"category_id"`
 		}
 
 		// Use c.ShouldBind to handle form data binding
@@ -63,14 +63,20 @@ func CreateProduct(db *gorm.DB) gin.HandlerFunc {
 			return
 		}
 		// If err == http.ErrMissingFile, we proceed with an empty imageURL
-
+		categoryUUID, err := uuid.Parse(in.CategoryID)
+		if err != nil {
+			// Handle the error if the incoming CategoryID is not a valid UUID format
+			// This is crucial for data integrity.
+			// Example: return an error response
+			return
+		}
 		p := config.Product{
 			ID:          uuid.New().String(),
 			Name:        in.Name,
 			Description: in.Description,
 			Price:       price,
 			Stock:       stock,
-			Category:    in.Category,
+			CategoryID:  &categoryUUID,
 			ImageURL:    imageURL, // Store the path
 		}
 
@@ -123,7 +129,7 @@ func UpdateProduct(db *gorm.DB) gin.HandlerFunc {
 			Description string `form:"description"`
 			Price       string `form:"price"`
 			Stock       string `form:"stock"`
-			Category    string `form:"category"`
+			CategoryID  string `form:"category_id"`
 		}
 
 		if err := c.ShouldBind(&in); err != nil {
@@ -139,8 +145,8 @@ func UpdateProduct(db *gorm.DB) gin.HandlerFunc {
 		if in.Description != "" {
 			updates["description"] = in.Description
 		}
-		if in.Category != "" {
-			updates["category"] = in.Category
+		if in.CategoryID != "" {
+			updates["category_id"] = in.CategoryID
 		}
 
 		// Handle Price update

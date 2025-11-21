@@ -40,5 +40,7 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, productCache *cache.Cache) *gi
 	admin.PUT("/products/:id", controllers.UpdateProduct(db))
 	admin.DELETE("/products/:id", controllers.DeleteProduct(db))
 
+	// Category
+	admin.POST("/categories", controllers.CreateProduct(db))
 	return r
 }
